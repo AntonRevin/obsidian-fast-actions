@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "fast-actions",
+	"name": "Fast Actions",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+	"description": "Adds OneNote-style star/action/question toggles for lines.",
+	"author": "Anton Revin",
+	"authorUrl": "https://www.linkedin.com/in/antonrevin/",
+	"fundingUrl": "---",
+	"isDesktopOnly": true
 }
