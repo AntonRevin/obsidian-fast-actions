@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, EditorPosition, MarkdownView, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
 interface FastActionsSettings {
 	star: string,
@@ -23,7 +23,7 @@ export default class FastActions extends Plugin {
 			id: 'star-toggle',
 			name: 'Toggle Star',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
-				this.lineToggleValue(editor, this.settings.star);
+				this.toggleValue(editor, this.settings.star);
 			},
 			icon: "star"
 		});
@@ -33,7 +33,7 @@ export default class FastActions extends Plugin {
 			id: 'action-toggle',
 			name: 'Toggle Action',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
-				this.lineToggleValue(editor, this.settings.action);
+				this.toggleValue(editor, this.settings.action);
 			}
 		});
 
@@ -42,7 +42,7 @@ export default class FastActions extends Plugin {
 			id: 'question-toggle',
 			name: 'Toggle Question',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
-				this.lineToggleValue(editor, this.settings.question);
+				this.toggleValue(editor, this.settings.question);
 			}
 		});
 
@@ -60,12 +60,23 @@ export default class FastActions extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	lineToggleValue(editor: Editor, val: string): void {
-		var ln = editor.getCursor();
-		var txt = editor.getLine(ln.line);
+	toggleValue(editor: Editor, val: string): void {
+		var sel = editor.listSelections();
+		var end = sel[0].anchor.line;
+		var start = sel[0].head.line;
+		var num_lines = end - start;
+		for (let i = 0; i <= num_lines; i++) {
+			var v : EditorPosition = {ch : 1, line: start + i};
+			this.lineToggleValue(editor, v, val);
+		}
+	}
+
+	lineToggleValue(editor: Editor, pos: EditorPosition, val: string): void {
+		var txt = editor.getLine(pos.line);
 
 		var toggleType = txt.includes(val + " ");
 		var checkbox = RegExp(/([-+*].(\[.\]))/).test(txt);
+		var numbered = RegExp(/^[\s]*(?:\d+\.) .*/).test(txt);
 
 		if (toggleType) {
 			txt = txt.replace(new RegExp(val + " ", "g"), "");
@@ -73,22 +84,27 @@ export default class FastActions extends Plugin {
 			if (txt.length > 0) {
 				var txtTrim = txt.trimStart();
 				var startPos = txt.search(/\S|$/);
-				if (txtTrim[0] == "-" || txtTrim[0] == "+") {
+				if (txtTrim[0] == "-" || txtTrim[0] == "+" || txtTrim[0] == "*") {
 					if (checkbox) {
 						txt = txt.slice(0, startPos) + "- [" + txt[startPos + 3] + "] " + val + txt.slice(startPos + 5);
 					} else {
 						txt = txt.slice(0, startPos) + "- " + val + txt.slice(startPos + 1);
 					}
 				} else {
-					if (startPos == 0) {
-						txt = val + " " + txt.slice(startPos);
+					if (numbered) {
+						var startContent = txt.search(/\./);
+						txt = txt.slice(0, startContent) + ". " + val + txt.slice(startContent + 1);
 					} else {
-						txt = txt.slice(0, startPos) + val + " " + txt.slice(startPos + 1);
+						if (startPos == 0) {
+							txt = val + " " + txt.slice(startPos);
+						} else {
+							txt = txt.slice(0, startPos) + val + " " + txt.slice(startPos);
+						}
 					}
 				}
 			}
 		}
-		editor.setLine(ln.line, txt);
+		editor.setLine(pos.line, txt);
 	}
 }
 
