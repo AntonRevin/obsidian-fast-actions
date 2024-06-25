@@ -1,11 +1,10 @@
 {
 	"id": "fast-actions",
 	"name": "Fast Actions",
-	"version": "0.1.1",
+	"version": "0.1.3",
 	"minAppVersion": "0.15.0",
-	"description": "Adds OneNote-style star/action/question toggles for lines.",
+	"description": "Adds OneNote-style star/action/question toggles for lines & week deliminators for files.",
 	"author": "Anton Revin",
 	"authorUrl": "https://www.linkedin.com/in/antonrevin/",
-	"fundingUrl": "---",
 	"isDesktopOnly": true
 }

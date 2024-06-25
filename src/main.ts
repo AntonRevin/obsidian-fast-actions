@@ -1,15 +1,21 @@
 import { App, Editor, EditorPosition, MarkdownView, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { getWeekNumber, getDateWithFormat } from 'src/utils';
+import { ExplorerLeaf } from './types';
 
 interface FastActionsSettings {
 	star: string,
 	action: string,
-	question: string;
+	question: string,
+	delimPaths: string[],
+	delimFormat: string;
 }
 
 const DEFAULT_SETTINGS: FastActionsSettings = {
 	star: '#key',
 	action: '#action',
-	question: "#question"
+	question: "#question",
+	delimPaths: ["Daily/"],
+	delimFormat: "DD-MM-YYYY"
 }
 
 export default class FastActions extends Plugin {
@@ -46,6 +52,18 @@ export default class FastActions extends Plugin {
 			}
 		});
 
+		// Register change events
+		this.app.workspace.onLayoutReady(() => this.handleExplorerRefresh());
+		this.registerEvent(
+			this.app.workspace.on('layout-change', () => this.handleExplorerRefresh()),
+		);
+		this.registerEvent(
+			this.app.vault.on('delete', (file) => this.handleExplorerRefresh()),
+		);
+		this.registerEvent(
+			this.app.vault.on('rename', (file, oldPath) => this.handleExplorerRefresh()),
+		);
+
 		// Register the settings tab
 		this.addSettingTab(new SettingsTab(this.app, this));
 	}
@@ -58,6 +76,47 @@ export default class FastActions extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	handleExplorerRefresh(): void {
+		const fileExplorers : ExplorerLeaf[] = this.app.workspace.getLeavesOfType('file-explorer');
+		for (const fileExplorer of fileExplorers) { 
+			const leaves = Object.keys(fileExplorer.view.fileItems);
+			var targetLeaves : any = {};
+			for (const sub of this.settings.delimPaths) {
+				targetLeaves[sub] = [];
+			}
+
+			for (let i = 0; i < leaves.length; i++) {
+				const name = leaves[i];
+				if (this.settings.delimPaths.some(sub => name.startsWith(sub))) {
+					fileExplorer.view.fileItems[name].el.classList.remove("divider");
+					fileExplorer.view.fileItems[name].el.id = getWeekNumber(getDateWithFormat(name, this.settings.delimFormat)).toString();
+					for (const sub of this.settings.delimPaths) {
+						if (name.startsWith(sub)) {
+							targetLeaves[sub].push(name);
+						}
+					}
+				}
+			}
+
+			for (const sub of this.settings.delimPaths) {
+				targetLeaves[sub].sort((a : string, b : string) => {
+					const d1 = getDateWithFormat(a, this.settings.delimFormat);
+					const d2 = getDateWithFormat(b, this.settings.delimFormat);
+					return d1.getTime() - d2.getTime();
+				});
+			}
+
+			for (const sub of this.settings.delimPaths) {
+				for (let i = 0; i < targetLeaves[sub].length - 1; i++) {
+					const name = targetLeaves[sub][i];
+					if (fileExplorer.view.fileItems[name].el.id < fileExplorer.view.fileItems[targetLeaves[sub][i+1]].el.id) {
+						fileExplorer.view.fileItems[name].el.classList.add("divider");
+					}
+				}
+			}
+		}
 	}
 
 	toggleValue(editor: Editor, val: string): void {
@@ -158,14 +217,28 @@ class SettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		containerEl.createEl("p", {
-			text: "Fast Actions - Settings",
-		});
+		new Setting(containerEl)
+			.setName('Weekly Deliminator: Folder Paths')
+			.setDesc('Path to the daily notes folder for adding separators, one per line')
+			.addTextArea(text => text
+				.setPlaceholder('Daily/')
+				.setValue(this.plugin.settings.delimPaths.join("\n"))
+				.onChange(async (value) => {
+					this.plugin.settings.delimPaths = value.split("\n");
+					await this.plugin.saveSettings();
+					this.plugin.handleExplorerRefresh();
+				}));
 
-		containerEl.createEl("a", {
-			text: "//AR",
-			cls: "fastactions_logo",
-			href: "https://www.linkedin.com/in/antonrevin/"
-		});
+		new Setting(containerEl)
+			.setName('Weekly Deliminator: Date Format')
+			.setDesc('Format for ')
+			.addText(text => text
+				.setPlaceholder('DD-MM-YYYY')
+				.setValue(this.plugin.settings.delimFormat)
+				.onChange(async (value) => {
+					this.plugin.settings.delimFormat = value;
+					await this.plugin.saveSettings();
+					this.plugin.handleExplorerRefresh();
+				}));
 	}
 }
