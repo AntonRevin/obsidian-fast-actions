@@ -6,14 +6,16 @@ interface FastActionsSettings {
 	star: string,
 	action: string,
 	question: string,
+	tomorrow: string,
 	delimPaths: string[],
 	delimFormat: string;
 }
 
 const DEFAULT_SETTINGS: FastActionsSettings = {
-	star: '#key',
-	action: '#action',
+	star: "#key",
+	action: "#action",
 	question: "#question",
+	tomorrow: "#tomorrow",
 	delimPaths: ["Daily/"],
 	delimFormat: "DD-MM-YYYY"
 }
@@ -49,6 +51,15 @@ export default class FastActions extends Plugin {
 			name: 'Toggle Question',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
 				this.toggleValue(editor, this.settings.question);
+			}
+		});
+
+		// Tomorrow
+		this.addCommand({
+			id: 'tomorrow-toggle',
+			name: 'Toggle Tomorrow',
+			editorCallback: (editor: Editor, view: MarkdownView) => {
+				this.toggleValue(editor, this.settings.tomorrow);
 			}
 		});
 
@@ -214,6 +225,17 @@ class SettingsTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.question)
 				.onChange(async (value) => {
 					this.plugin.settings.question = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Tomorrow')
+			.setDesc('String toggle using the Tomorrow command')
+			.addText(text => text
+				.setPlaceholder('#tomorrow')
+				.setValue(this.plugin.settings.tomorrow)
+				.onChange(async (value) => {
+					this.plugin.settings.tomorrow = value;
 					await this.plugin.saveSettings();
 				}));
 
