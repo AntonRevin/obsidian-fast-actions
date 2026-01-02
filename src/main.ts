@@ -90,10 +90,10 @@ export default class FastActions extends Plugin {
 	}
 
 	handleExplorerRefresh(): void {
-		const fileExplorers : ExplorerLeaf[] = this.app.workspace.getLeavesOfType('file-explorer');
-		for (const fileExplorer of fileExplorers) { 
+		const fileExplorers: ExplorerLeaf[] = this.app.workspace.getLeavesOfType('file-explorer');
+		for (const fileExplorer of fileExplorers) {
 			const leaves = Object.keys(fileExplorer.view.fileItems);
-			var targetLeaves : any = {};
+			var targetLeaves: any = {};
 			for (const sub of this.settings.delimPaths) {
 				targetLeaves[sub] = [];
 			}
@@ -112,17 +112,19 @@ export default class FastActions extends Plugin {
 			}
 
 			for (const sub of this.settings.delimPaths) {
-				targetLeaves[sub].sort((a : string, b : string) => {
+				targetLeaves[sub].sort((a: string, b: string) => {
 					const d1 = getDateWithFormat(a, this.settings.delimFormat);
 					const d2 = getDateWithFormat(b, this.settings.delimFormat);
 					return d1.getTime() - d2.getTime();
 				});
 			}
 
+			console.log(targetLeaves)
+
 			for (const sub of this.settings.delimPaths) {
 				for (let i = 0; i < targetLeaves[sub].length - 1; i++) {
 					const name = targetLeaves[sub][i];
-					if (fileExplorer.view.fileItems[name].el.id < fileExplorer.view.fileItems[targetLeaves[sub][i+1]].el.id) {
+					if ((fileExplorer.view.fileItems[name].el.id < fileExplorer.view.fileItems[targetLeaves[sub][i + 1]].el.id) || (getDateWithFormat(name, this.settings.delimFormat).getFullYear() < getDateWithFormat(targetLeaves[sub][i + 1], this.settings.delimFormat).getFullYear())) {
 						fileExplorer.view.fileItems[name].el.classList.add("divider");
 					}
 				}
@@ -136,7 +138,7 @@ export default class FastActions extends Plugin {
 		var start = sel[0].head.line;
 		var num_lines = end - start;
 		for (let i = 0; i <= num_lines; i++) {
-			var v : EditorPosition = {ch : 1, line: start + i};
+			var v: EditorPosition = { ch: 1, line: start + i };
 			this.lineToggleValue(editor, v, val);
 		}
 	}
