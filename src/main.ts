@@ -119,8 +119,6 @@ export default class FastActions extends Plugin {
 				});
 			}
 
-			console.log(targetLeaves)
-
 			for (const sub of this.settings.delimPaths) {
 				for (let i = 0; i < targetLeaves[sub].length - 1; i++) {
 					const name = targetLeaves[sub][i];
